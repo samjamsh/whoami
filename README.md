@@ -7,7 +7,7 @@ this program is similar to linux whoami command, you might see current logged in
 
 
   
-  gcc -o whoami whoami.c
+      gcc -o whoami whoami.c
 
 
 
@@ -15,7 +15,7 @@ this program is similar to linux whoami command, you might see current logged in
 
 
 
-   ./whoami
+       ./whoami
 
    
 
