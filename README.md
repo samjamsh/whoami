@@ -5,9 +5,8 @@ this program is similar to linux whoami command, you might see current logged in
 
 1. first step: COMPILING
 
-
-  
-      gcc -o whoami whoami.c
+ 
+       gcc -o whoami whoami.c
 
 
 
