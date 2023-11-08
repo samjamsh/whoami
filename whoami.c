@@ -172,10 +172,10 @@ int uid_gid(void){ // passwd file in etc dir
             if (pts == 1){ // if its first point :
                 snprintf(username, sizeof(username), "%s\0", rd);
             }
-            else if (pts == 3){ // if its third point :
+            else if (pts == 3){
                 char uidstr[11]; // store uid got in getuid func converted to string
                 snprintf(uidstr, sizeof(uidstr), "%d\0", uid); // convertes uid got by getuid function in string
-                int uid_len = str_len(uidstr); //count; // tamanho de uid ou uid lenght
+                int uid_len = str_len(uidstr);
 
                 // compares if got from getuid function and uid got from passwd file are same
                 if (strncmp(uidstr, rd, uid_len) == 0){
@@ -183,10 +183,10 @@ int uid_gid(void){ // passwd file in etc dir
                 } else {
                 }
             }
-            else if (pts == 4){ // if its fourth point :
+            else if (pts == 4){
                 char gidstr[11]; // store gid got in getgid func converted to string
-                snprintf(gidstr, sizeof(gidstr), "%d\0", gid); // convertes gid got by getgid function in string
-                int gid_len = str_len(gidstr); //count; // tamanho de gid ou gid lenght
+                snprintf(gidstr, sizeof(gidstr), "%d\0", gid);
+                int gid_len = str_len(gidstr);
 
                 // compares if got from getgid function and gid got from passwd file are same
                 if (strncmp(gidstr, rd, gid_len) == 0){
@@ -195,7 +195,6 @@ int uid_gid(void){ // passwd file in etc dir
                         printf("%s\n", username);
                         return 0;
                     } else {
-                        //printf("error: was not possible to get the current username!\n");
                         return 1;
                     }
                 }
@@ -223,20 +222,41 @@ int uid_gid(void){ // passwd file in etc dir
 //////////////////////////////////////////////////////////////////
 
 
-int main(void){
+int main(int argc, char *argv[]){
 #if defined(__linux__)
 
-    if (uid_gid() != 0){
-        if (environ_var() != 0){
-            environ_file();
+char *versionInfo = "Whoami (alternative) v1.0\nPublished 11/2023 free and open source software\nThis is a free software you can use, modify it as you want as well you cando whatever you want\nContacts: instagram> @sam.jamsh or gmail: cyberjamsh002@gmail.com, this tool was created by sam jamsh";
+
+char *helpMessage = "Use: [program] [OPTION]\nThis program prints curent logged in user name through the current user identification (uid). The same as id -un.\nOPTIONS:\n       --help        show this help message\n  --version     shows the program version information\n\nThis is version 1.0 of whoami similar and alternative to whoami command, for any bugs and errors you can report on github page or in my contact info. github: samjamsh";
+
+if (argc >= 2){
+    if (strcmp(argv[1], "--help\0") == 0){
+        printf("%s\n", helpMessage); // displays help message
+    }
+    else if (argc >= 2 && strcmp(argv[1], "--version\0") == 0){
+        printf("%s\n", versionInfo); // displays version information
+    }
+    else {
+        printf("Tente '%s --help' para mais informações.\n", argv[0]);
+        return 1;
+
+    }
+}
+
+    if (uid_gid() != 0){ // get current session user name through uid and gid
+        if (environ_var() != 0){ // get user name through environment variable
+            environ_file(); // get user name throught environment variable stored in environment file 
         } else{
-            printf("error getting username\n");
+            puts("error getting username");
             return 1;
         }
     }
-    return 0;
+
+
+return 0;
+
 #else
-    printf("os error: operating system must be linux\n");
+    puts("os error: operating system must be linux");
     return 1;
 #endif
 }
