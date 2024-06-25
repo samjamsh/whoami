@@ -1,263 +1,622 @@
-#include <string.h>
+/*  whoami - Equivalent to 'id -un',  it prints actually user name associated with the uid version 1.1
+
+    Copyright (C) 2023-2024 Free and Open Source Software "No Copyrights"
+
+    This program is free software: you can redistribute it or modify it under the terms of the project that means you can do whatever you want with this program.
+
+    Differences with Linux whoami:
+       This is a different code what it means that both programs may do the samething but in different ways
+       This is a not GNU Core utilities (coreutils) program, it means that I created this program from zero by myself
+
+       By Yassir Daniel also known as Sam Jamsh
+
+*/
+
+
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
+
+#define VERSION "1.1"
+#define OWNER "Sam Jamsh"
+#define EMAIL "th3cyb3rguy@protonmail.com"
+#define WEBPAGE "https://github.com/samjamsh/whoami"
+
+#define SUCCESS 0
+#define ERROR 1
+
+#define true 1
+#define false 0
+
+typedef char bool;
 
 extern char **environ;
 
-int environ_var(void){  // environ global and extern variable
-    char** env = environ;
 
-    while (1){
 
-        if (strncmp(*env, "LOGNAME=", 8) == 0){
-            char *username = *env;
-            username+=8;
-            printf("%s\n", username);
-            return 1;
-        }
-        env++;
-    }
+unsigned short intlen(int number)
+{
 
-    return 1;
+unsigned short lenght;
+
+while (number != 0)
+{
+    number /= 10;
+    lenght++;
+}
+
+return lenght;
 }
 
 
 
-//////////////////////////////////////////////////////////////////
+char* int_tostrn(unsigned int number, unsigned short buflen)
+{
+
+short ld = 0;
+
+char* string = malloc(sizeof(char) * (buflen + 1));
+
+unsigned short i = 0;
 
 
-int set_value(char target[], char value, size_t size){
-    int elements = size;
-    for (int i = 0; i < elements; i++){
-        target[i] = value;
+while (number != 0)
+{
+    ld = number % 10; // last digit
+    number = number / 10; // update number
 
+    string[i] = ld + 48;
+
+    i++;
+}
+string[i] = '\0';
+
+return string;
+}
+
+
+
+unsigned short strlen_(char *string){
+
+    unsigned short counter;
+    unsigned short ushort_lim = 65535;
+
+    for (counter = 0; counter < ushort_lim; counter++)
+    {
+        if (*string++ == 0)
+        {
+            return counter;
+        }
     }
     return 0;
 }
 
 
-int environ_file(void){ // environ file in proc and pid dir
 
-    pid_t pid = getpid(); // gets current program pid
-    char env_path[30]; // store environ file path '/proc/pid/environ'
+void invert(char *array, unsigned short limit)
+{
 
-    snprintf(env_path, sizeof(env_path), "/proc/%d/environ", pid); // stores environ file path '/proc/pid/environ' in env_path var
+unsigned short first_pos = 0; // first digit position
+unsigned short last_pos = limit - 1; // last digit position
+char temp_var;
 
-    FILE *file = fopen(env_path, "r"); // opens environ file on read mode
+unsigned short answer;
+answer = (unsigned short) limit / 2; // quotient only
 
-    char character; // stores each character read in file
-    char var[9];
-    int tracker = 0;  // works as indice to var array var, to store characters in var array var
-    int position;
-    char username[128]; // stores username when found, with max buffer as 128 characters 
-    int logname_found = 0;
+for (unsigned short i = 0; i < answer; i++)
+{
+
+    temp_var = array[last_pos];
+    array[last_pos] = array[first_pos];
+    array[first_pos] = temp_var;
+
+    last_pos--;
+    first_pos++;
+}
+
+return;
+}
 
 
-    while (character != EOF) {
-        character = (char) fgetc(file);   // stores char returned by fgetc func in character var
-        var[tracker] = character;  //stores character var value in var 'var' array using tracker as indice
 
-        if (tracker == 4) { // if there's (from 0) 7 values including 0 itself, 0 to 6 = 7 values counting from zero
+char* new_merge_strings(char *string1, char *string2, char *string3)
+{
+    if (string1 == NULL || string2 == NULL || string3 == NULL)
+    {
+        puts("err: string1/2/3 NULL");
+        return NULL;
+    }
 
-            if (strncmp("USER=", var, 5) == 0){ // when array var lenght is 7 and if array var elements characters is same to "logname" string
-                logname_found = 1;
+    unsigned short string1_lenght = strlen_(string1);
 
-                for (int i = 0; 1; i++){
-                    character = fgetc(file);
+    unsigned short string2_lenght = strlen_(string2);
 
-                    if ((int) character == 0){
-                        username[i] = '\0';
-                        break;
-                    }
-                    username[i] = (char) character;
-                }
-                printf("%s\n", username);
-                return 0;
+    unsigned short string3_lenght = strlen_(string3);
+
+    unsigned short allocate = string1_lenght + string2_lenght + string3_lenght;
+
+    char *ptr = malloc(sizeof(char) * allocate + 1);
+
+    unsigned short i;
+
+    for (i = 0; i < string1_lenght; i++)
+    {
+        ptr[i] = string1[i];
+    }
+
+    for (i = i; i < string1_lenght + string2_lenght; i++)
+    {
+        ptr[i] = string2[i - string1_lenght];
+
+    }
+
+    for (i = i; i < allocate; i++)
+    {
+        ptr[i] = string3[i - (string1_lenght + string2_lenght)];
+    }
+
+    ptr[allocate] = '\0';
+
+return ptr;
+}
+
+
+
+int envfile(void)
+{
+    char *user = "USER=";
+    char *logname = "LOGNAME=";
+
+    unsigned short i = 0;  // (user) found chrs
+    unsigned short ii = 0; // (logname) found chars
+    char c = 1;
+
+    bool user_found = false;
+    bool logname_found = false;
+    bool found = false;
+
+
+    pid_t pid = getpid();
+
+    unsigned int pid_ = (unsigned int) pid;
+
+    unsigned short pid_len = intlen(pid_);
+
+    char *strpid = int_tostrn(pid_, pid_len);
+
+    unsigned short strpid_len = strlen_(strpid);
+
+    invert(strpid, strpid_len); // reverse strpid
+
+    char *path = new_merge_strings("/proc/", strpid, "/environ");
+
+    free(strpid);
+
+
+    FILE *file = fopen(path, "r");
+    if (file == NULL)
+    {
+        perror("file error");
+        return 0;
+    }
+
+
+    while (c != EOF)
+    {
+        c = fgetc(file);
+
+        if (i < 4 || i != 5)
+        {
+
+            if (i > 0 && c != user[i])
+            {
+                i = 0;
             }
 
-            tracker++;
-
-        }
-
-        else if (tracker == 7) { // if there's (from 0) 7 values including 0 itself, 0 to 6 = 7 values counting from zero
-            var[-1] = '\0';
-
-            if (strncmp("LOGNAME=", var, 8) == 0){ // when array var lenght is 7 and if array var elements characters is same to "logname" string
-                logname_found = 1;
-
-                for (int i = 0; 1; i++){
-                    character = fgetc(file);
-
-                    if ((int) character == 0){
-                        username[i] = '\0';
-                        break;
-                    }
-                    username[i] = (char) character;
-                }
-                printf("%s\n", username);
-                return 0;
+            if (c == user[i])
+            {
+                i++;
             }
-
-            set_value(var, '\0', sizeof(var));
-
-            tracker = 0; // changes var indice to start putting characters in var variable starting from 0 or element zero
-
-            position++; // current cursor location plus one or current cursor position +1
-
-            fseek(file, position, SEEK_SET); // move cursor position to next byte or  (+1) location
-
         }
-
         else {
-            tracker++;
+
+            if (c != 0)
+            {
+                printf("%c", c);
+            }
+            else {
+                printf("\n");
+                found = true;
+                break;
+            }
+        }
+
+
+        if (ii < 7 || ii != 8)
+        {
+            if (ii > 0 && c != logname[ii])
+            {
+                ii = 0;
+            }
+
+            if (c == logname[ii])
+            {
+                ii++;
+            }
+
+        }
+        else {
+
+            if (c != 0)
+            {
+                printf("%c", c);
+            }
+            else {
+                printf("\n");
+                found = true;
+                break;
+            }
         }
     }
 
-    return 1;
+    return found;
 }
 
 
-///////////////////////////////////////////////////////////
+bool cmpstr(char *string1, char *string2)
+{
+    unsigned short i = 0;
+    bool same = 0;
 
+    while (string1[i] != '\0' && string2[i] != '\0')
+    {
 
-
-int str_len(char p[]){
-    int i;
-    for (i = 0; 1; i++){
-        if (p[i] != '\0'){
-       } else{
+        if (string1[i] != string2[i])
+        {
+            same = 1; // different
             break;
-       }
-    } return i;
+        }
+
+        i++;
+    }
+    return same;
+
 }
 
 
-int uid_gid(void){ // passwd file in etc dir
+
+bool cmpstrn(char *string1, char *string2, unsigned int number)
+{
+    unsigned short i = 0;
+    bool same = 0;
+
+    while ((string1[i] != '\0' && i < number) || (string2[i] != '\0' && i < number))
+    {
+
+        if (string1[i] != string2[i])
+        {
+            same = 1; // different
+            break;
+        }
+
+        i++;
+    }
+    return same;
+
+}
+
+
+
+int environ_var(void){
+    char** env = environ;
+
+    while (1){
+
+        if (cmpstrn(*env, "USER=", 5) == 0){
+            *env+=5;
+            printf("%s\n", *env);
+            return true;
+        }
+
+        if (cmpstrn(*env, "LOGNAME=", 8) == 0){
+            *env+=8;
+            printf("%s\n", *env);
+            return true;
+        }
+
+        env++;
+    }
+
+    return SUCCESS;
+}
+
+
+
+bool get_column(char* ptr, unsigned short column, char separator, unsigned short* ret){
+
+    unsigned col = 0;
+    char chr;
+    unsigned short i = 0;
+    unsigned short n = 0;
+
+    unsigned short begin = 0;
+    unsigned short end;
+
+    ret[0] = 0;
+    ret[1] = 0;
+
+
+    while (i < strlen_(ptr)){
+
+        chr = ptr[i];
+
+        n++;
+
+        if (chr == separator)
+        {
+            col++;
+
+            end = n;
+            if (col == column)
+            {
+                ret[0] = begin;
+                ret[1] = --end;
+                return SUCCESS;
+            }
+            begin = n;
+        }
+
+        i++;
+
+    }
+    return ERROR;
+
+}
+
+
+
+bool print_range(char *ptr, unsigned short begin, unsigned short end){
+    for (unsigned short i = begin; i < end; i++)
+    {
+        printf("%c", ptr[i]);
+    }
+    return SUCCESS;
+
+}
+
+
+
+bool fill_range(char *ptr, char *buffer, unsigned short ptr_begin, unsigned short ptr_end){
+
+
+    unsigned short lenght = ptr_end - ptr_begin;
+
+    for (unsigned short i = 0; i < lenght; i++)
+    {
+        buffer[i] = ptr[ptr_begin + i];
+
+    }
+
+    return SUCCESS;
+}
+
+
+
+short decimal(char value)
+{
+    if (value >= 48 && value <= 57)
+        return value - 48;
+
+    else
+        return -1;
+}
+
+
+
+unsigned short strn_to_int(char *string, unsigned short str_len)
+{
+
+unsigned short v = 1;
+unsigned short total = 0;
+unsigned short value;
+short number;
+
+int i = str_len - 2; // int
+
+
+while (i >= 0)
+{
+
+    number = decimal(string[i]);
+
+    if (number == -1)
+        return 0; //-1;
+
+    i--;
+
+    v = v * 10;
+
+    value = number * v;
+
+    total += value;
+}
+
+number = decimal(string[str_len -1]);
+
+if (number == -1)
+    return 0; //-1;
+
+total = total + number;
+
+return total;
+
+}
+
+
+
+int uid_gid(void)
+{
 
     FILE *file = fopen("/etc/passwd","r");
 
     if (file == NULL){
-        perror("erro ao abrir o arquivo");
+        perror("error opening passwd file");
+       return 0;
     }
 
-    int c; // character returnd by fgetc function
-    int n = 0; // how many char on each point or characters between a point
-    int l = 0;
-    int lchrs = 0;
-    int pts = 0; // points or how many points
     uid_t uid = getuid();
     gid_t gid = getgid();
 
-    int uid_found = 0;
-    int gid_found = 0;
-    char rd[128]; // characters readed or chars readed between a point
-    char username[128]; //(char*) malloc(sizeof(char)*128);
-    int count = 0; // rd array indice, indice to use to store returned char by fgetc in rd array
+    bool uid_bool = false;
+    bool gid_bool = false;
 
-    while (c != EOF){
-        c = fgetc(file);
-        n++;
-        lchrs++;
+    bool found = false;
 
-        if (n <= 128){
-            if (c != 58){
-                rd[count] = c;
-                count++;
-            }
-        }
+    unsigned short iuid;
+    unsigned short igid;
 
-        if (c == 58){ // if character is : decimal 58
-            pts++;
+    unsigned short column_range;
 
-            if (pts == 1){ // if its first point :
-                snprintf(username, sizeof(username), "%s\0", rd);
-            }
-            else if (pts == 3){
-                char uidstr[11]; // store uid got in getuid func converted to string
-                snprintf(uidstr, sizeof(uidstr), "%d\0", uid); // convertes uid got by getuid function in string
-                int uid_len = str_len(uidstr);
+    unsigned short allocated_uid;
+    unsigned short allocated_gid;
 
-                // compares if got from getuid function and uid got from passwd file are same
-                if (strncmp(uidstr, rd, uid_len) == 0){
-                    uid_found = 1;
-                } else {
-                }
-            }
-            else if (pts == 4){
-                char gidstr[11]; // store gid got in getgid func converted to string
-                snprintf(gidstr, sizeof(gidstr), "%d\0", gid);
-                int gid_len = str_len(gidstr);
 
-                // compares if got from getgid function and gid got from passwd file are same
-                if (strncmp(gidstr, rd, gid_len) == 0){
-                    gid_found = 1;
-                    if (uid_found == 1 && gid_found == 1){ // if uid and gid was found
-                        printf("%s\n", username);
-                        return 0;
-                    } else {
-                        return 1;
-                    }
-                }
-            }
-            count = 0;
-            n = 0;
-            memset(rd, '\0', sizeof(rd));
-        }
-        else if (c == 10){ // if character is \n decimal 10
-            n = 0;
-            count = 0;
-            memset(rd, '\0', sizeof(rd));
-            l++;
-            lchrs = 0;
-            pts = 0;
-        }
-        else{
-        }
+    unsigned short *ret = malloc(sizeof(unsigned short) * 2);
+
+    if (ret == NULL)
+    {
+        puts("error alocating ret memory");
+        return 0;
     }
+
+
+    char *struid = malloc(sizeof(char));
+    char *strgid = malloc(sizeof(char));
+
+    if (struid == NULL || strgid == NULL)
+    {
+        puts("error alocating memory to str uid & gid");
+        return 0;
+    }
+
+    char *line = NULL;
+    size_t bufsize = 0;
+
+    while(getline(&line, &bufsize, file) != -1)
+    {
+
+
+    // uid
+    get_column(line, 3, ':', ret);
+
+    column_range = ret[1] - ret[0];
+
+     if (column_range > allocated_uid)
+        {
+            allocated_uid = column_range;
+
+            struid = realloc(struid,
+sizeof(char) * allocated_uid);
+
+        }
+
+    fill_range(line, struid, ret[0], ret[1]);
+
+    iuid = strn_to_int(struid, column_range);
+
+
+
+    // gid
+    get_column(line, 4, ':', ret);
+
+    column_range = ret[1] - ret[0];
+
+    if (column_range > allocated_gid)
+        {
+            allocated_gid = column_range;
+
+            strgid = realloc(strgid,
+sizeof(char) * allocated_gid);
+
+        }
+
+    fill_range(line, strgid, ret[0], ret[1]);
+
+    igid = strn_to_int(strgid, column_range);
+
+
+    uid_bool = uid == (uid_t) iuid;
+    gid_bool = gid == (gid_t) igid;
+
+    if (uid_bool == true && gid_bool == true)
+    {
+        get_column(line, 1, ':', ret);
+
+        column_range = ret[1] - ret[0];
+
+        print_range(line, ret[0], ret[1]);
+
+        printf("\n");
+
+        found = true;
+        break;
+    }
+
+    }
+
+    free(ret);
+    free(struid);
+    free(strgid);
+    free(line);
     fclose(file);
-    return 1;
+    return found;
 }
 
-
-//////////////////////////////////////////////////////////////////
 
 
 int main(int argc, char *argv[]){
 #if defined(__linux__)
 
-char *versionInfo = "Whoami (alternative) v1.0\nPublished 11/2023 free and open source software\nThis is a free software you can use, modify it as you want as well you cando whatever you want\nContacts: instagram> @sam.jamsh or gmail: cyberjamsh002@gmail.com, this tool was created by sam jamsh";
-
-char *helpMessage = "Use: [program] [OPTION]\nThis program prints curent logged in user name through the current user identification (uid). The same as id -un.\nOPTIONS:\n       --help        show this help message\n  --version     shows the program version information\n\nThis is version 1.0 of whoami similar and alternative to whoami command, for any bugs and errors you can report on github page or in my contact info. github: samjamsh";
-
-if (argc >= 2){
-    if (strcmp(argv[1], "--help\0") == 0){
-        printf("%s\n", helpMessage); // displays help message
+if (argc > 1){
+    if (cmpstr(argv[1], "--help\0") == 0)
+    {
+        printf("Usage: %s [OPTION]...\nDisplays the user name associated to actual user id (uid) same as id -un.\n\n      --help        display this help message\n      --version     display the program version information\n\nReporting Bugs and complete Documentation in <%s>\nCopyright: this is a free software, you are free to change and redistribute it.\nWritten by %s", argv[0], WEBPAGE, OWNER); // displays help message
     }
-    else if (argc >= 2 && strcmp(argv[1], "--version\0") == 0){
-        printf("%s\n", versionInfo); // displays version information
+    else if (cmpstr(argv[1], "--version\0") == 0)
+    {
+        printf("Whoami (NGCU) version %s\nCopyright (C) 2024 Free and Open Source Software.\nThis is a free software: you are free to modify and redistribute it.\n\nWritten by %s aka Yassir, instagram> @sam.jamsh, email> %s\n ", VERSION, OWNER, EMAIL); // displays version information
     }
     else {
-        printf("Tente '%s --help' para mais informações.\n", argv[0]);
-        return 1;
+        printf("%s: unknown option '%s'\nTry '%s --help' for more info.", argv[0], argv[1], argv[0]);
 
     }
+    return 0;
 }
+else {
 
-    if (uid_gid() != 0){ // get current session user name through uid and gid
-        if (environ_var() != 0){ // get user name through environment variable
-            environ_file(); // get user name throught environment variable stored in environment file 
-        } else{
-            puts("error getting username");
-            return 1;
+
+
+    // passwd file
+    if(!uid_gid()){
+
+        // environ file
+        if (!envfile()){ // unnecessary func
+
+            // environ variable
+            if (!environ_var()){ // unnecessary func
+
+                puts("error: failed getting username");
+                return ERROR;
+            }
         }
     }
 
-
-return 0;
+}
+return SUCCESS;
 
 #else
-    puts("os error: operating system must be linux");
-    return 1;
+    puts("wrong operational system: you must compile this code on a linux distribution");
+    return ERROR;
 #endif
 }
-
+ 
